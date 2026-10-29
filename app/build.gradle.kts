@@ -7,7 +7,7 @@ plugins {
 }
 
 // Month.Year.Release, where Release counts the releases within that month.
-val appVersion = "10.2026.2"
+val appVersion = "10.2026.3"
 val (versionMonth, versionYear, versionRelease) = appVersion.split(".").map(String::toInt)
 
 // The release key lives outside the repo; builds without it fall back to the debug key.
