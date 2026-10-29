@@ -49,3 +49,7 @@ Measured on a Pixel 8 Pro (Android 17), release build compiled ahead of time:
   which Android batches during deep sleep. No services running, no wake locks,
   no internet permission. The only extra permission is `RECEIVE_BOOT_COMPLETED`,
   which keeps the job scheduled after a reboot.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The tab icons are Material Icons (Apache 2.0).
