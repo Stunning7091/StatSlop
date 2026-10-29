@@ -1,14 +1,14 @@
 package app.statslop
 
+import android.app.job.JobInfo
+import android.app.job.JobParameters
+import android.app.job.JobScheduler
+import android.app.job.JobService
+import android.content.ComponentName
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import androidx.work.CoroutineWorker
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkerParameters
-import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 data class Sample(
     val ts: Long,
@@ -79,18 +79,29 @@ class HistoryDb private constructor(context: Context) :
     }
 }
 
-class SampleWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
-    override suspend fun doWork(): Result {
-        BatteryReader.read(applicationContext)?.let { HistoryDb.get(applicationContext).record(it) }
-        return Result.success()
+/** Records one battery sample every 15 minutes via the platform JobScheduler. */
+class SampleJob : JobService() {
+    override fun onStartJob(params: JobParameters): Boolean {
+        thread {
+            BatteryReader.read(this)?.let { HistoryDb.get(this).record(it) }
+            jobFinished(params, false)
+        }
+        return true
     }
 
+    override fun onStopJob(params: JobParameters) = false
+
     companion object {
+        private const val JOB_ID = 1
+
         fun schedule(context: Context) {
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "battery-sample",
-                ExistingPeriodicWorkPolicy.KEEP,
-                PeriodicWorkRequestBuilder<SampleWorker>(15, TimeUnit.MINUTES).build(),
+            val scheduler = context.getSystemService(JobScheduler::class.java)
+            if (scheduler.getPendingJob(JOB_ID) != null) return
+            scheduler.schedule(
+                JobInfo.Builder(JOB_ID, ComponentName(context, SampleJob::class.java))
+                    .setPeriodic(15 * 60_000L)
+                    .setPersisted(true)
+                    .build()
             )
         }
     }

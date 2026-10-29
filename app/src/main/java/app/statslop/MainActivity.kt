@@ -1,6 +1,7 @@
 package app.statslop
 
 import android.os.Bundle
+import androidx.annotation.DrawableRes
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,10 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.BatteryChargingFull
-import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,8 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -48,7 +45,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        SampleWorker.schedule(this)
+        SampleJob.schedule(this)
         setContent {
             val context = LocalContext.current
             val scheme = if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -57,10 +54,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Tab(val label: String, val icon: ImageVector) {
-    Battery("Battery", Icons.Outlined.BatteryChargingFull),
-    System("System", Icons.Outlined.Memory),
-    Apps("Apps", Icons.Outlined.Apps),
+private enum class Tab(val label: String, @DrawableRes val icon: Int) {
+    Battery("Battery", R.drawable.ic_tab_battery),
+    System("System", R.drawable.ic_tab_system),
+    Apps("Apps", R.drawable.ic_tab_apps),
 }
 
 @Composable
@@ -79,20 +76,28 @@ private fun StatSlopApp() {
     var usagePermission by remember { mutableStateOf(UsageReader.hasPermission(context)) }
     var usage by remember { mutableStateOf<UsageSummary?>(null) }
 
-    // Live readings every 2 s while visible; a history sample at most once a minute.
-    LaunchedEffect(lifecycle, historyDays) {
+    // Live readings every 2 s, only for the open tab; a history sample at most once a minute.
+    val lastRecorded = remember { longArrayOf(0L) }
+    LaunchedEffect(lifecycle, tab, historyDays) {
+        if (tab == Tab.Apps) return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            var lastRecorded = 0L
+            var reloadHistory = true
             while (true) {
                 withContext(Dispatchers.IO) {
-                    val b = BatteryReader.read(context)
+                    if (tab == Tab.System) {
+                        system = SystemReader.read(context)
+                        return@withContext
+                    }
+                    val b = BatteryReader.read(context) ?: return@withContext
                     battery = b
-                    system = SystemReader.read(context)
-                    if (b != null && b.timestamp - lastRecorded >= 60_000) {
-                        lastRecorded = b.timestamp
+                    if (b.timestamp - lastRecorded[0] >= 60_000) {
+                        lastRecorded[0] = b.timestamp
                         db.record(b)
-                        val from = b.timestamp - historyDays * 86_400_000L
-                        history = db.since(from)
+                        reloadHistory = true
+                    }
+                    if (reloadHistory) {
+                        reloadHistory = false
+                        history = db.since(b.timestamp - historyDays * 86_400_000L)
                         val lastPlugged = db.lastPluggedTs()
                         drain = drainStats(db.since(b.timestamp - 7 * 86_400_000L), b, lastPlugged, lastPlugged?.let(db::levelAt))
                     }
@@ -119,7 +124,7 @@ private fun StatSlopApp() {
                     NavigationBarItem(
                         selected = tab == it,
                         onClick = { tab = it },
-                        icon = { Icon(it.icon, null) },
+                        icon = { Icon(painterResource(it.icon), null) },
                         label = { Text(it.label) },
                     )
                 }
