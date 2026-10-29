@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown in the widget picker only; the real widget is widget_stats. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView style="@style/WidgetValue" android:text="84%" android:textSize="22sp" android:textStyle="bold" />
+
+        <TextView style="@style/WidgetValue" android:text="0.6 W" />
+
+        <TextView style="@style/WidgetValue" android:text="52% RAM" />
+
+        <TextView style="@style/WidgetValue" android:text="24 °C" />
+    </LinearLayout>
+
+    <TextView style="@style/WidgetLabel" android:text="@string/widget_battery_label" />
+
+    <ImageView style="@style/WidgetChart" android:src="@drawable/widget_preview_line" />
+
+    <TextView style="@style/WidgetLabel" android:text="Power on battery" />
+
+    <ImageView style="@style/WidgetChart" android:src="@drawable/widget_preview_line" />
+
+    <TextView style="@style/WidgetLabel" android:text="@string/widget_ram_label" />
+
+    <ImageView style="@style/WidgetChart" android:src="@drawable/widget_preview_line" />
+</LinearLayout>

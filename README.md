@@ -14,6 +14,9 @@ removed. No network access.
   uptime vs. deep sleep, device info.
 - **Apps**: screen-on time, unlocks, per-app screen time and apps that kept a
   background (foreground) service running, the usual deep-sleep blockers (today / 7 days).
+- **Home-screen widget** (4x3, resizable): battery %, power, RAM and temperature,
+  plus 24-hour graphs of battery level, power on battery and RAM. It refreshes with
+  every 15-minute sample and whenever the app is open; tap it to open StatSlop.
 
 ## Limits (Android, not this app)
 
@@ -58,8 +61,8 @@ Measured on a test phone (Android 17), release build compiled ahead of time:
   after 180 tab switches, so there is no leak.
 - Cold start: about 520 ms. APK: 1.7 MB.
 - Background: one short sample job every 15 minutes via the platform JobScheduler,
-  which Android batches during deep sleep. No services running, no wake locks,
-  no internet permission. The only extra permission is `RECEIVE_BOOT_COMPLETED`,
+  which Android batches during deep sleep. The same job redraws the widget.
+  No services running, no wake locks, no internet permission. The only extra permission is `RECEIVE_BOOT_COMPLETED`,
   which keeps the job scheduled after a reboot.
 
 ## License

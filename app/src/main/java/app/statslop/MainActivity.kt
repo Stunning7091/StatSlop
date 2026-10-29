@@ -92,7 +92,8 @@ private fun StatSlopApp() {
                     battery = b
                     if (b.timestamp - lastRecorded[0] >= 60_000) {
                         lastRecorded[0] = b.timestamp
-                        db.record(b)
+                        db.record(b, SystemReader.ramUsedPercent(context))
+                        StatsWidget.updateAll(context)
                         reloadHistory = true
                     }
                     if (reloadHistory) {

@@ -39,6 +39,12 @@ object SystemReader {
     private var lastHeadroom: Float? = null
     private var lastHeadroomAt = 0L
 
+    fun ramUsedPercent(context: Context): Int {
+        val mem = ActivityManager.MemoryInfo()
+        context.getSystemService(ActivityManager::class.java).getMemoryInfo(mem)
+        return ((mem.totalMem - mem.availMem) * 100 / mem.totalMem).toInt()
+    }
+
     fun read(context: Context): SystemSnapshot {
         val am = context.getSystemService(ActivityManager::class.java)
         val mem = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }

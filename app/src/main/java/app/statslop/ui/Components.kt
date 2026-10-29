@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.statslop.MAX_SAMPLE_GAP_MS
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -155,7 +156,7 @@ fun TimeChart(
 
                 // Bands: each highlighted point covers until the next sample.
                 points.zipWithNext().forEach { (a, b) ->
-                    if (a.highlighted && b.ts - a.ts <= MAX_GAP_MS) {
+                    if (a.highlighted && b.ts - a.ts <= MAX_SAMPLE_GAP_MS) {
                         drawRect(band, Offset(x(a.ts), 0f), Size(x(b.ts) - x(a.ts), size.height))
                     }
                 }
@@ -165,7 +166,7 @@ fun TimeChart(
                 points.forEach { p ->
                     val px = x(p.ts)
                     val py = y(p.value.coerceIn(yMin, yMax))
-                    if (prev == null || p.ts - prev!!.ts > MAX_GAP_MS) path.moveTo(px, py) else path.lineTo(px, py)
+                    if (prev == null || p.ts - prev!!.ts > MAX_SAMPLE_GAP_MS) path.moveTo(px, py) else path.lineTo(px, py)
                     prev = p
                 }
                 drawPath(path, line, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
@@ -200,9 +201,6 @@ fun TimeChart(
         }
     }
 }
-
-// Doze can delay samples by hours; only a longer gap (phone off) breaks the line.
-private const val MAX_GAP_MS = 12 * 3_600_000L
 
 private fun timeLabel(ts: Long, spanMs: Long): String {
     val style = if (spanMs > 26 * 3_600_000L) {

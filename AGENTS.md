@@ -31,6 +31,7 @@ the battery and resource stats that HyperOS loses when its Security app
 | `SystemReader.kt` | RAM, storage, per-core CPU clocks (sysfs), thermal status, uptime vs. deep sleep |
 | `History.kt` | SQLite history (`SQLiteOpenHelper`, 30 days), `SampleJob` (15-minute `JobService`), drain stats |
 | `UsageReader.kt` | Per-app screen time, screen-on time, unlocks and foreground-service time per app via `UsageStatsManager` |
+| `StatsWidget.kt` | Home-screen widget: current values plus 24-hour graphs drawn into bitmaps |
 | `MainActivity.kt` | Compose root, three tabs, 2-second refresh of the open tab only |
 | `ui/` | One file per tab plus `Components.kt` (cards, meters, `TimeChart`, formatters) |
 | `install.sh` | Builds if needed, installs over adb, grants usage access |
@@ -62,6 +63,7 @@ Do not reverse these without asking the maintainer:
 - **No WorkManager, Room, DI framework or icon library.** Background sampling is the plain `SampleJob`, and storage is `SQLiteOpenHelper`. They were removed on purpose: 9 fewer manifest components, 3 fewer permissions, about 200 KB smaller APK.
 - **No Doze or battery-optimisation exemption.** The sampler must not wake the phone from deep sleep. Drain stats and charts accept gaps of up to 12 h because of this.
 - **EmojiCompat startup initializer is removed** in the manifest; the app shows no emoji.
+- **The widget never schedules its own updates** (`updatePeriodMillis` is 0). It is redrawn after each history sample (`SampleJob`, or the open app once a minute), so it adds no wakeups.
 - **History is self-recorded.** Android gives normal apps no access to system battery history, so charts start at install time.
 - **Charts:** one series and one y-axis per chart. The series is blue (`#2A78D6` light, `#3987E5` dark), and plugged-in periods are a neutral band.
 

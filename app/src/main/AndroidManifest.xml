@@ -30,6 +30,17 @@
             android:name=".SampleJob"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver
+            android:name=".StatsWidget"
+            android:exported="false"
+            android:label="StatSlop">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stats_widget_info" />
+        </receiver>
 
         <!-- The app shows no emoji: skip loading the emoji font at every start. -->
         <provider

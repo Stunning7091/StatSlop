@@ -10,39 +10,55 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import kotlin.concurrent.thread
 
+/** Doze can delay samples by hours; a longer gap usually means the phone was off. */
+const val MAX_SAMPLE_GAP_MS = 12 * 3_600_000L
+
 data class Sample(
     val ts: Long,
     val level: Int,
     val tempC: Float,
     val currentMa: Int?,
     val charging: Boolean,
-)
+    /** Null for samples recorded before version 10.2026.3. */
+    val voltageMv: Int?,
+    val ramPercent: Int?,
+) {
+    /** Power drawn from the battery; null while plugged in or when unknown. */
+    val dischargeW: Float?
+        get() = if (charging || currentMa == null || voltageMv == null) null else currentMa * voltageMv / 1_000_000f
+}
 
 /** Battery samples recorded by this app; Android keeps no history a normal app can read. */
 class HistoryDb private constructor(context: Context) :
-    SQLiteOpenHelper(context, "history.db", null, 1) {
+    SQLiteOpenHelper(context, "history.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             "CREATE TABLE samples (ts INTEGER PRIMARY KEY, level INTEGER, temp REAL, " +
-                "current INTEGER, charging INTEGER)"
+                "current INTEGER, charging INTEGER, voltage INTEGER, ram INTEGER)"
         )
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE samples ADD COLUMN voltage INTEGER")
+            db.execSQL("ALTER TABLE samples ADD COLUMN ram INTEGER")
+        }
+    }
 
-    fun record(s: BatterySnapshot) {
+    fun record(s: BatterySnapshot, ramPercent: Int) {
         if (s.level < 0) return
         writableDatabase.execSQL(
-            "INSERT OR REPLACE INTO samples VALUES (?, ?, ?, ?, ?)",
-            arrayOf(s.timestamp, s.level, s.tempC, s.currentMa, if (s.isPlugged) 1 else 0)
+            "INSERT OR REPLACE INTO samples (ts, level, temp, current, charging, voltage, ram) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            arrayOf(s.timestamp, s.level, s.tempC, s.currentMa, if (s.isPlugged) 1 else 0, s.voltageMv, ramPercent)
         )
         writableDatabase.delete("samples", "ts < ?", arrayOf((s.timestamp - KEEP_MS).toString()))
     }
 
     fun since(fromTs: Long): List<Sample> =
         readableDatabase.rawQuery(
-            "SELECT ts, level, temp, current, charging FROM samples WHERE ts >= ? ORDER BY ts",
+            "SELECT ts, level, temp, current, charging, voltage, ram FROM samples WHERE ts >= ? ORDER BY ts",
             arrayOf(fromTs.toString())
         ).use { c ->
             buildList {
@@ -53,6 +69,8 @@ class HistoryDb private constructor(context: Context) :
                         tempC = c.getFloat(2),
                         currentMa = if (c.isNull(3)) null else c.getInt(3),
                         charging = c.getInt(4) == 1,
+                        voltageMv = if (c.isNull(5)) null else c.getInt(5),
+                        ramPercent = if (c.isNull(6)) null else c.getInt(6),
                     )
                 )
             }
@@ -83,7 +101,8 @@ class HistoryDb private constructor(context: Context) :
 class SampleJob : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
         thread {
-            BatteryReader.read(this)?.let { HistoryDb.get(this).record(it) }
+            BatteryReader.read(this)?.let { HistoryDb.get(this).record(it, SystemReader.ramUsedPercent(this)) }
+            StatsWidget.updateAll(this)
             jobFinished(params, false)
         }
         return true
@@ -125,9 +144,7 @@ fun drainStats(
     var ms = 0L
     samples.zipWithNext().forEach { (a, b) ->
         val gap = b.ts - a.ts
-        // Doze can delay the sampler for hours, so long gaps on battery still count;
-        // gaps over 12 h usually mean the phone was off.
-        if (!a.charging && !b.charging && gap in 1..(12 * 3_600_000L) && b.level <= a.level) {
+        if (!a.charging && !b.charging && gap in 1..MAX_SAMPLE_GAP_MS && b.level <= a.level) {
             drop += a.level - b.level
             ms += gap
         }

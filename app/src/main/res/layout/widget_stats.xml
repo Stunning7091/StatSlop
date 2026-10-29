@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_battery"
+            style="@style/WidgetValue"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView android:id="@+id/widget_power" style="@style/WidgetValue" />
+
+        <TextView android:id="@+id/widget_ram" style="@style/WidgetValue" />
+
+        <TextView android:id="@+id/widget_temp" style="@style/WidgetValue" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_updated"
+        style="@style/WidgetLabel" />
+
+    <TextView
+        android:id="@+id/widget_collecting"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="@string/widget_collecting"
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_charts"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView style="@style/WidgetLabel" android:text="@string/widget_battery_label" />
+
+        <ImageView android:id="@+id/widget_chart_battery" style="@style/WidgetChart" />
+
+        <TextView android:id="@+id/widget_label_power" style="@style/WidgetLabel" />
+
+        <ImageView android:id="@+id/widget_chart_power" style="@style/WidgetChart" />
+
+        <TextView style="@style/WidgetLabel" android:text="@string/widget_ram_label" />
+
+        <ImageView android:id="@+id/widget_chart_ram" style="@style/WidgetChart" />
+    </LinearLayout>
+</LinearLayout>
