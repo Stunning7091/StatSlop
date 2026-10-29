@@ -37,6 +37,8 @@ fun BatteryScreen(
         Text("Battery information is not available.")
         return
     }
+    // Charts need a line, not a dot: wait until the samples span half an hour.
+    val hasHistory = history.size >= 2 && history.last().ts - history.first().ts >= 30 * 60_000L
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -82,9 +84,9 @@ fun BatteryScreen(
             }
             val now = System.currentTimeMillis()
             val from = now - rangeDays * 86_400_000L
-            if (history.size < 2) {
+            if (!hasHistory) {
                 Text(
-                    "History builds up as StatSlop records a sample every 15 minutes. Check back in an hour.",
+                    "History builds up as StatSlop records a sample every 15 minutes. The chart appears after about 30 minutes.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
@@ -106,7 +108,7 @@ fun BatteryScreen(
             }
         }
 
-        if (history.size >= 2) {
+        if (hasHistory) {
             SectionCard("Temperature") {
                 val now = System.currentTimeMillis()
                 val temps = history.map { it.tempC }

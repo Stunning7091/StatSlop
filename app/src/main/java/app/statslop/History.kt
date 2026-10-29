@@ -114,8 +114,9 @@ fun drainStats(
     var ms = 0L
     samples.zipWithNext().forEach { (a, b) ->
         val gap = b.ts - a.ts
-        // Skip gaps where the phone was off or the sampler did not run.
-        if (!a.charging && !b.charging && gap in 1..(45 * 60_000L) && b.level <= a.level) {
+        // Doze can delay the sampler for hours, so long gaps on battery still count;
+        // gaps over 12 h usually mean the phone was off.
+        if (!a.charging && !b.charging && gap in 1..(12 * 3_600_000L) && b.level <= a.level) {
             drop += a.level - b.level
             ms += gap
         }

@@ -5,7 +5,9 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.os.PowerManager
 import android.os.Process
+import android.os.SystemClock
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -32,6 +34,8 @@ object UsageReader {
         val start = LocalDate.now().minusDays(daysBack.toLong())
             .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val end = System.currentTimeMillis()
+        // The screen can't have been on before the last boot.
+        val screenStart = maxOf(start, end - SystemClock.elapsedRealtime())
 
         val apps = usm.queryAndAggregateUsageStats(start, end).values
             .filter { it.totalTimeVisible >= 60_000 }
@@ -60,7 +64,7 @@ object UsageReader {
                 }
                 UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
                     // The first event being "off" means the screen was on at the start of the range.
-                    screenOnMs += e.timeStamp - (onSince ?: if (!sawScreenEvent) start else e.timeStamp)
+                    screenOnMs += e.timeStamp - (onSince ?: if (!sawScreenEvent) screenStart else e.timeStamp)
                     sawScreenEvent = true
                     onSince = null
                 }
@@ -68,6 +72,10 @@ object UsageReader {
             }
         }
         onSince?.let { screenOnMs += end - it }
+        // No screen events yet (e.g. just after boot): on since boot or start of range.
+        if (!sawScreenEvent && context.getSystemService(PowerManager::class.java).isInteractive) {
+            screenOnMs += end - screenStart
+        }
 
         return UsageSummary(apps, screenOnMs, unlocks)
     }

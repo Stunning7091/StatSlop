@@ -17,7 +17,7 @@ fi
 "$ADB" install -r "$APK"
 # Usage access for the Apps tab (same as Settings > Usage access > StatSlop).
 "$ADB" shell appops set "$PKG" GET_USAGE_STATS allow
-# Exempt from Doze/battery optimisation so the 15-minute history sampler is not dropped.
-"$ADB" shell cmd deviceidle whitelist +"$PKG"
+# No Doze exemption on purpose: in deep sleep Android batches the sampler into its
+# maintenance windows instead of waking the phone every 15 minutes.
 "$ADB" shell am start -n "$PKG/.MainActivity" >/dev/null
 echo "StatSlop installed and opened."

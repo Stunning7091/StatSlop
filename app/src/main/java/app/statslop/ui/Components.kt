@@ -201,7 +201,8 @@ fun TimeChart(
     }
 }
 
-private const val MAX_GAP_MS = 45 * 60_000L
+// Doze can delay samples by hours; only a longer gap (phone off) breaks the line.
+private const val MAX_GAP_MS = 12 * 3_600_000L
 
 private fun timeLabel(ts: Long, spanMs: Long): String {
     val style = if (spanMs > 26 * 3_600_000L) {
