@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 import app.statslop.AppUsage
 import app.statslop.UsageSummary
 
@@ -74,11 +73,25 @@ fun AppsScreen(
             StatRow("Unlocks", usage.unlocks.toString())
         }
 
+        SectionCard("Running in the background") {
+            Text(
+                "Apps that kept a foreground service running, such as music, navigation, VPN or sync. " +
+                    "They are the most common reason a phone doesn't deep sleep.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (usage.backgroundServices.isEmpty()) {
+                Text("No app ran a background service for more than a minute.")
+            }
+            val top = usage.backgroundServices.firstOrNull()?.durationMs ?: 1
+            usage.backgroundServices.forEach { AppRow(it, top) }
+        }
+
         SectionCard("Apps by screen time") {
             if (usage.apps.isEmpty()) {
                 Text("No app was used for more than a minute yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            val top = usage.apps.firstOrNull()?.foregroundMs ?: 1
+            val top = usage.apps.firstOrNull()?.durationMs ?: 1
             usage.apps.forEach { AppRow(it, top) }
         }
     }
@@ -86,17 +99,17 @@ fun AppsScreen(
 
 @Composable
 private fun AppRow(app: AppUsage, topMs: Long) {
-    val bitmap = remember(app.packageName) { app.icon?.toBitmap(96, 96)?.asImageBitmap() }
+    val bitmap = remember(app.icon) { app.icon?.asImageBitmap() }
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (bitmap != null) Image(bitmap, null, Modifier.size(36.dp)) else Spacer(Modifier.size(36.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row {
                 Text(app.label, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(formatDuration(app.foregroundMs), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(formatDuration(app.durationMs), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             LinearProgressIndicator(
-                progress = { app.foregroundMs.toFloat() / topMs },
+                progress = { app.durationMs.toFloat() / topMs },
                 modifier = Modifier.fillMaxWidth().height(4.dp),
                 color = seriesColor(),
                 trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,

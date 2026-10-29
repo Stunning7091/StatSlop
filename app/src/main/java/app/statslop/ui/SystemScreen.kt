@@ -81,7 +81,8 @@ fun SystemScreen(sys: SystemSnapshot?) {
             val deepSleep = if (sys.elapsedMs > 0) 100 - sys.awakeMs * 100 / sys.elapsedMs else 0
             StatRow("Deep sleep", "$deepSleep%")
             Text(
-                "A low deep-sleep share with the screen mostly off means something keeps the phone awake.",
+                "A low deep-sleep share with the screen mostly off means something keeps the phone awake. " +
+                    "Apps > Running in the background shows the usual suspects.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

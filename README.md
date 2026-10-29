@@ -12,7 +12,8 @@ removed. No network access.
   drop since unplugged.
 - **System**: RAM and storage, per-core CPU clocks, thermal throttling status,
   uptime vs. deep sleep, device info.
-- **Apps**: screen-on time, unlocks and per-app screen time (today / 7 days).
+- **Apps**: screen-on time, unlocks, per-app screen time and apps that kept a
+  background (foreground) service running, the usual deep-sleep blockers (today / 7 days).
 
 ## Limits (Android, not this app)
 

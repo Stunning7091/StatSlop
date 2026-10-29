@@ -30,7 +30,7 @@ the battery and resource stats that HyperOS loses when its Security app
 | `app/src/main/java/app/statslop/BatteryReader.kt` | Live battery snapshot from the sticky `ACTION_BATTERY_CHANGED` intent and `BatteryManager` |
 | `SystemReader.kt` | RAM, storage, per-core CPU clocks (sysfs), thermal status, uptime vs. deep sleep |
 | `History.kt` | SQLite history (`SQLiteOpenHelper`, 30 days), `SampleJob` (15-minute `JobService`), drain stats |
-| `UsageReader.kt` | Per-app screen time, screen-on time and unlocks via `UsageStatsManager` |
+| `UsageReader.kt` | Per-app screen time, screen-on time, unlocks and foreground-service time per app via `UsageStatsManager` |
 | `MainActivity.kt` | Compose root, three tabs, 2-second refresh of the open tab only |
 | `ui/` | One file per tab plus `Components.kt` (cards, meters, `TimeChart`, formatters) |
 | `install.sh` | Builds if needed, installs over adb, grants usage access |
