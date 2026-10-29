@@ -1,7 +1,8 @@
 # StatSlop
 
-Battery and system monitor for the POCO F9 Ultra, replacing the stats that went
-away with `com.miui.securitycenter`. Personal sideloaded app, no network access.
+Battery and system monitor for Android 12+. It replaces the battery and resource
+stats that HyperOS loses when its Security app (`com.miui.securitycenter`) is
+removed. No network access.
 
 ## Tabs
 
@@ -22,7 +23,17 @@ away with `com.miui.securitycenter`. Personal sideloaded app, no network access.
   permission. Screen time per app is the substitute.
 - No CPU load %: `/proc/stat` is blocked for apps since Android 8; clocks are shown instead.
 
-## Build & install
+## Install
+
+1. Download the latest `StatSlop-<version>.apk` from
+   [Releases](https://github.com/Stunning7091/StatSlop/releases) on your phone and open it.
+2. Allow installing apps from that source when asked.
+3. For per-app screen time: open the Apps tab and tap **Allow usage access**.
+
+Versions are named `Month.Year.Release`, e.g. `10.2026.1` is the first release
+of October 2026.
+
+## Build & install from source
 
 ```sh
 ./install.sh          # installs the existing APK (builds it first if missing)
@@ -38,7 +49,7 @@ To build by hand: `JAVA_HOME=~/Android/jdk ./gradlew assembleRelease`.
 
 ## Resource use
 
-Measured on a Pixel 8 Pro (Android 17), release build compiled ahead of time:
+Measured on a test phone (Android 17), release build compiled ahead of time:
 
 - CPU: 0.5–1.5 % of one core while open, 0 % in the background. Only the open tab
   refreshes (every 2 s); the Apps tab does not refresh at all.

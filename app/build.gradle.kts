@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// Month.Year.Release, where Release counts the releases within that month.
+val appVersion = "10.2026.1"
+val (versionMonth, versionYear, versionRelease) = appVersion.split(".").map(String::toInt)
+
+// The release key lives outside the repo; builds without it fall back to the debug key.
+val releaseKeys = File(System.getProperty("user.home"), ".config/statslop/keystore.properties")
+    .takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
 android {
     namespace = "app.statslop"
@@ -12,8 +23,18 @@ android {
         applicationId = "app.statslop"
         minSdk = 31
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Must always increase, so it is built as YYYYMMRR (e.g. 20261001).
+        versionCode = versionYear * 10_000 + versionMonth * 100 + versionRelease
+        versionName = appVersion
+    }
+
+    signingConfigs {
+        if (releaseKeys != null) create("release") {
+            storeFile = file(releaseKeys.getProperty("storeFile"))
+            storePassword = releaseKeys.getProperty("storePassword")
+            keyAlias = releaseKeys.getProperty("keyAlias")
+            keyPassword = releaseKeys.getProperty("keyPassword")
+        }
     }
 
     buildTypes {
@@ -21,8 +42,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            // Sideloaded personal app: sign release with the local debug key.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

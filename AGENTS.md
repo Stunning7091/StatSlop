@@ -16,8 +16,8 @@ If a tradeoff is unavoidable, the lower-numbered priority wins. Never sacrifice 
 ## This project: StatSlop
 
 StatSlop is a small Android battery and system monitor. It was built to replace
-the battery and resource stats that HyperOS loses when the Xiaomi/POCO Security
-app (`com.miui.securitycenter`) is removed, but it runs on any Android 12+ phone.
+the battery and resource stats that HyperOS loses when its Security app
+(`com.miui.securitycenter`) is removed, but it runs on any Android 12+ phone.
 
 - Kotlin + Jetpack Compose (Material 3), one Gradle module `app`, package `app.statslop`.
 - `minSdk 31`, `targetSdk`/`compileSdk 35`. AGP 8.7, Kotlin 2.0, Gradle wrapper 8.11.
@@ -34,6 +34,7 @@ app (`com.miui.securitycenter`) is removed, but it runs on any Android 12+ phone
 | `MainActivity.kt` | Compose root, three tabs, 2-second refresh of the open tab only |
 | `ui/` | One file per tab plus `Components.kt` (cards, meters, `TimeChart`, formatters) |
 | `install.sh` | Builds if needed, installs over adb, grants usage access |
+| `release.sh` | Builds the signed APK and publishes it as a GitHub release |
 
 ### Build and run
 
@@ -44,7 +45,13 @@ JAVA_HOME=/path/to/jdk17+ ./gradlew assembleRelease   # build only
 
 - Gradle needs a full JDK (with `javac`), not just a JRE. `install.sh` uses `~/Android/jdk` if it exists.
 - `install.sh` finds adb via the `ADB` environment variable, falling back to the maintainer's local path.
-- The release build is minified with R8 and signed with the local debug key. It's a sideloaded personal app, not a Play Store app.
+- The release build is minified with R8. It is signed with the release key from `~/.config/statslop/keystore.properties` (never committed), or with the debug key on machines without it.
+
+### Releasing
+
+1. Set `appVersion` in `app/build.gradle.kts` to `Month.Year.Release`. Release counts the releases within that month and starts at 1, e.g. the second release of November 2026 is `11.2026.2`. `versionCode` is derived from it.
+2. Commit, then run `./release.sh "What changed"`. It refuses to run with uncommitted changes, an existing release of that version, or an APK not signed with the release key.
+3. Never publish a debug-signed APK, and never replace the release key. Either one stops existing installs from updating, and users would have to uninstall and lose their history.
 
 ### Decisions already made
 
@@ -60,7 +67,7 @@ Do not reverse these without asking the maintainer:
 
 ### Platform quirks
 
-- `BATTERY_PROPERTY_CURRENT_NOW` should be µA, but some kernels report mA. `readCurrentMa` guesses the unit, and the UI takes the direction from the charging status. On a Pixel 8 Pro it is µA, and negative means discharging.
+- `BATTERY_PROPERTY_CURRENT_NOW` should be µA, but some kernels report mA. `readCurrentMa` guesses the unit, and the UI takes the direction from the charging status. On the test phone it is µA, and negative means discharging.
 - `PowerManager.getThermalHeadroom` returns NaN when polled more than about once a second, so `SystemReader` caches it for 1.5 s.
 - CPU load % is not readable by apps (`/proc/stat` is blocked since Android 8), so clocks are shown instead.
 - Design capacity comes from the hidden `PowerProfile` class via reflection and is `null` on most devices. The UI hides those rows when it is missing.
@@ -81,7 +88,7 @@ adb shell dumpsys meminfo app.statslop | grep "TOTAL PSS"
 
 - **Leak check:** switch tabs about 60 times, then compare `TOTAL PSS`. It must level off, not keep growing.
 - **Before/after performance:** run `adb shell cmd package compile -m speed -f app.statslop` on both builds first, and alternate the runs. Without that, the numbers aren't comparable.
-- **Baseline** (Pixel 8 Pro, Android 17, 2026-10-29): cold start ~520 ms, ~136 MB PSS open, ~85 MB in the background, 0.5–1.5 % of one core while open, APK 1.70 MB. If a change moves these numbers, update "Resource use" in `README.md`.
+- **Baseline** (test phone, Android 17, 2026-10-29): cold start ~520 ms, ~136 MB PSS open, ~85 MB in the background, 0.5–1.5 % of one core while open, APK 1.70 MB. If a change moves these numbers, update "Resource use" in `README.md`.
 
 ### Repository hygiene
 
